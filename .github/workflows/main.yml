@@ -1,7 +1,7 @@
-# MTK Kernel Build with KernelSU Integration
+# MTK Kernel Build with ReSukiSU Integration
 # Defconfig: blossom_defconfig
 
-name: Build Kernel with KernelSU-SUSFS
+name: Build Nadeko Kernel
 
 on:
   pull_request:
@@ -53,12 +53,26 @@ jobs:
           /tmp/gcc-aarch64/bin/aarch64-linux-android-gcc --version
           /tmp/gcc-arm/bin/arm-linux-androideabi-gcc --version
 
-      - name: Integrate KernelSU-Next
+      - name: Integrate ReSukiSU
         run: |
           chmod u+x clean.sh
           bash clean.sh
           curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
-      
+
+      - name: Get ReSukiSU version
+        run: |
+          RSK_VER="0"
+          for d in KernelSU KernelSU/kernel kernel/KernelSU drivers/kernelsu; do
+            if [ -d "$d" ]; then
+              RSK_VER=$(cd "$d" && git rev-list --count HEAD 2>/dev/null || echo "0")
+              if [ "$RSK_VER" != "0" ]; then
+                break
+              fi
+            fi
+          done
+          echo "RSK_VER=$RSK_VER" >> $GITHUB_ENV
+          echo "ReSukiSU version: $RSK_VER"
+
       - name: Build kernel
         run: |
           export PATH="/tmp/clang/bin:/tmp/gcc-aarch64/bin:/tmp/gcc-arm/bin:${PATH}"
@@ -71,7 +85,7 @@ jobs:
 
           make O=out ARCH=${ARCH} ${KERNEL_DEFCONFIG}
 
-          echo "Building kernel with KernelSU-Next..."
+          echo "Building kernel with ReSukiSU..."
           make -j$(nproc) \
             O=out \
             ARCH=${ARCH} \
@@ -80,6 +94,12 @@ jobs:
             CROSS_COMPILE=${CROSS_COMPILE} \
             CROSS_COMPILE_ARM32=${CROSS_COMPILE_ARM32} \
             2>&1 | tee build.log
+
+      - name: Set artifact name
+        run: |
+          ARTIFACT_NAME="Nadeko-rsk${RSK_VER}-$(date +%y%m%d)-$(date +%H%M)-${GITHUB_SHA:0:9}"
+          echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
+          echo "Artifact name: $ARTIFACT_NAME"
 
       - name: Package AnyKernel3
         run: |
@@ -106,7 +126,7 @@ jobs:
 
           cat > anykernel.sh << 'EOF'
           properties() { '
-          kernel.string=Jujutsu Kernel for blossom by Nishan Najmal aka kurama9-tails on XDA
+          kernel.string=Nadeko Kernel for blossom by dre698
           do.devicecheck=1
           device.name1=blossom
           device.name2=dandelion
@@ -129,7 +149,7 @@ jobs:
           write_boot;
           EOF
 
-          zip -r9 ../Blossom-Kernel-${{ github.sha }}.zip * -x .git README.md *placeholder
+          zip -r9 ../${ARTIFACT_NAME}.zip * -x .git README.md *placeholder
 
       - name: Package Prebuilt Artifacts
         run: |
@@ -137,7 +157,6 @@ jobs:
           mkdir -p prebuilt/modules
           mkdir -p prebuilt/headers
 
-          # Copy kernel image (check all possible names)
           if [ -f "out/arch/${KERNEL_ARCH}/boot/Image.gz-dtb" ]; then
             cp out/arch/${KERNEL_ARCH}/boot/Image.gz-dtb prebuilt/kernel
             echo "✓ Copied Image.gz-dtb as kernel"
@@ -152,7 +171,6 @@ jobs:
             exit 1
           fi
 
-          # Copy DTB
           if [ -f "out/arch/${KERNEL_ARCH}/boot/dtb.img" ]; then
             cp out/arch/${KERNEL_ARCH}/boot/dtb.img prebuilt/
             echo "✓ Copied dtb.img"
@@ -160,7 +178,6 @@ jobs:
             echo "⚠ No dtb.img found"
           fi
 
-          # Copy DTBO
           if [ -f "out/arch/${KERNEL_ARCH}/boot/dtbo.img" ]; then
             cp out/arch/${KERNEL_ARCH}/boot/dtbo.img prebuilt/
             echo "✓ Copied dtbo.img"
@@ -168,7 +185,6 @@ jobs:
             echo "⚠ No dtbo.img found"
           fi
 
-          # Copy modules
           MODULES_FOUND=$(find out/ -name "*.ko" -print -quit)
           if [ -n "$MODULES_FOUND" ]; then
             find out/ -name "*.ko" -exec cp {} prebuilt/modules/ \;
@@ -177,7 +193,6 @@ jobs:
             echo "⚠ No kernel modules found"
           fi
 
-          # Copy headers (check common locations)
           if [ -d "out/staging/usr/include" ]; then
             cp -r out/staging/usr/include prebuilt/headers/
             echo "✓ Copied headers from out/staging/usr/include"
@@ -188,7 +203,6 @@ jobs:
             echo "⚠ No headers found"
           fi
 
-          # List contents for verification
           echo ""
           echo "=== Prebuilt package contents ==="
           ls -lah prebuilt/
@@ -199,28 +213,27 @@ jobs:
           echo "=== Headers ==="
           ls -lah prebuilt/headers/ 2>/dev/null || echo "No headers directory"
 
-          # Create the zip
           cd prebuilt
-          zip -r9 ../Blossom-Prebuilts-${{ github.sha }}.zip *
+          zip -r9 ../${ARTIFACT_NAME}-prebuilts.zip *
 
       - name: Upload AnyKernel package
         uses: actions/upload-artifact@v4
         with:
-          name: Blossom-Kernel-Package
-          path: Blossom-Kernel-${{ github.sha }}.zip
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.ARTIFACT_NAME }}.zip
           retention-days: 30
 
       - name: Upload Prebuilt Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Blossom-Prebuilts-Package
-          path: Blossom-Prebuilts-${{ github.sha }}.zip
+          name: ${{ env.ARTIFACT_NAME }}-prebuilts
+          path: ${{ env.ARTIFACT_NAME }}-prebuilts.zip
           retention-days: 30
 
       - name: Upload build log
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: build-log-${{ github.sha }}
+          name: build-log-${{ env.ARTIFACT_NAME }}
           path: build.log
           retention-days: 7
