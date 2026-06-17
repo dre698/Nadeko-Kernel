@@ -97,7 +97,7 @@ jobs:
 
       - name: Set artifact name
         run: |
-          ARTIFACT_NAME="Nadeko-rsk${RSK_VER}-$(date +%y%m%d)-$(date +%H%M)-${GITHUB_SHA:0:9}"
+          ARTIFACT_NAME="Nadeko-$(date +%y%m%d)-$(date +%H%M)-${GITHUB_SHA:0:9}"
           echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
           echo "Artifact name: $ARTIFACT_NAME"
 
