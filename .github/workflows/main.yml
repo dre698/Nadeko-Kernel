@@ -1,4 +1,4 @@
-# MTK Kernel Build with ReSukiSU Integration
+# MTK Kernel Build with KernelSU Integration
 # Defconfig: blossom_defconfig
 
 name: Build Nadeko Kernel
@@ -53,25 +53,18 @@ jobs:
           /tmp/gcc-aarch64/bin/aarch64-linux-android-gcc --version
           /tmp/gcc-arm/bin/arm-linux-androideabi-gcc --version
 
-      - name: Integrate ReSukiSU
+      - name: Integrate KernelSU
         run: |
           chmod u+x clean.sh
           bash clean.sh
-          curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
+          curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 
-      - name: Get ReSukiSU version
+      - name: Get KernelSU version
         run: |
-          RSK_VER="0"
-          for f in KernelSU/kernel/sucompat.h KernelSU/kernel/ksu.h drivers/kernelsu/ksu.h; do
-            if [ -f "$f" ]; then
-              RSK_VER=$(grep -oP '(?<=KERNELSU_VERSION )\d+' "$f" 2>/dev/null || echo "0")
-              if [ "$RSK_VER" != "0" ]; then
-                break
-              fi
-            fi
-          done
-          echo "RSK_VER=$RSK_VER" >> $GITHUB_ENV
-          echo "ReSukiSU version: $RSK_VER"
+          KSU_GIT_VER=$(cd KernelSU && git rev-list --count HEAD 2>/dev/null || echo "0")
+          KSU_VER=$((30000 + KSU_GIT_VER))
+          echo "KSU_VER=$KSU_VER" >> $GITHUB_ENV
+          echo "KernelSU version: $KSU_VER"
 
       - name: Build kernel
         run: |
@@ -85,7 +78,7 @@ jobs:
 
           make O=out ARCH=${ARCH} ${KERNEL_DEFCONFIG}
 
-          echo "Building kernel with ReSukiSU..."
+          echo "Building kernel with KernelSU..."
           make -j$(nproc) \
             O=out \
             ARCH=${ARCH} \
@@ -97,7 +90,7 @@ jobs:
 
       - name: Set artifact name
         run: |
-          ARTIFACT_NAME="Nadeko-suki${RSK_VER}-$(date +%y%m%d)-$(date +%H%M)-${GITHUB_SHA:0:9}"
+          ARTIFACT_NAME="Nadeko-ks${KSU_VER}-$(date +%y%m%d)-$(date +%H%M)-${GITHUB_SHA:0:9}"
           echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
           echo "Artifact name: $ARTIFACT_NAME"
 
