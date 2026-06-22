@@ -62,9 +62,9 @@ jobs:
       - name: Get ReSukiSU version
         run: |
           RSK_VER="0"
-          for d in KernelSU KernelSU/kernel kernel/KernelSU drivers/kernelsu; do
-            if [ -d "$d" ]; then
-              RSK_VER=$(cd "$d" && git rev-list --count HEAD 2>/dev/null || echo "0")
+          for f in KernelSU/kernel/sucompat.h KernelSU/kernel/ksu.h drivers/kernelsu/ksu.h; do
+            if [ -f "$f" ]; then
+              RSK_VER=$(grep -oP '(?<=KERNELSU_VERSION )\d+' "$f" 2>/dev/null || echo "0")
               if [ "$RSK_VER" != "0" ]; then
                 break
               fi
@@ -97,7 +97,7 @@ jobs:
 
       - name: Set artifact name
         run: |
-          ARTIFACT_NAME="Nadeko-rsk${RSK_VER}-$(date +%y%m%d)-$(date +%H%M)-${GITHUB_SHA:0:9}"
+          ARTIFACT_NAME="Nadeko-suki${RSK_VER}-$(date +%y%m%d)-$(date +%H%M)-${GITHUB_SHA:0:9}"
           echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
           echo "Artifact name: $ARTIFACT_NAME"
 
