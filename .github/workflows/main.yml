@@ -233,7 +233,7 @@ jobs:
       - name: Telegram notification
         if: always()
         run: |
-          COMPILER_VER=$(/tmp/clang/bin/clang --version | head -1 | cut -d '(' -f1)
+          COMPILER_VER=$(/tmp/clang/bin/clang --version | head -1 | sed 's/ (.*//')
           if [ "${{ job.status }}" == "success" ]; then
             B_MIN=$((${{ env.B_TIME }} / 60))
             B_SEC=$((${{ env.B_TIME }} % 60))
