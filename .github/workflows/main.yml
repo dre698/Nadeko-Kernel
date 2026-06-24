@@ -12,6 +12,9 @@ env:
   KERNEL_ARCH: "arm64"
   KBUILD_BUILD_USER: "github-actions"
   KBUILD_BUILD_HOST: "ci-server"
+  BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  PRIVATE_CHAT_ID: ${{ secrets.TELEGRAM_PRIVATE_CHAT_ID }}
+  GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
 
 jobs:
   build_and_package:
@@ -68,6 +71,7 @@ jobs:
 
       - name: Build kernel
         run: |
+          START_TIME=$(date +%s)
           export PATH="/tmp/clang/bin:/tmp/gcc-aarch64/bin:/tmp/gcc-arm/bin:${PATH}"
 
           export ARCH=${KERNEL_ARCH}
@@ -87,6 +91,8 @@ jobs:
             CROSS_COMPILE=${CROSS_COMPILE} \
             CROSS_COMPILE_ARM32=${CROSS_COMPILE_ARM32} \
             2>&1 | tee build.log
+
+          echo "B_TIME=$(($(date +%s) - START_TIME))" >> $GITHUB_ENV
 
       - name: Set artifact name
         run: |
@@ -144,6 +150,9 @@ jobs:
 
           zip -r9 ../${ARTIFACT_NAME}.zip * -x .git README.md *placeholder
 
+          Z_MD5=$(md5sum ../${ARTIFACT_NAME}.zip | cut -d ' ' -f1)
+          echo "Z_MD5=$Z_MD5" >> $GITHUB_ENV
+
       - name: Package Prebuilt Artifacts
         run: |
           echo "Creating prebuilt artifacts package..."
@@ -196,16 +205,6 @@ jobs:
             echo "⚠ No headers found"
           fi
 
-          echo ""
-          echo "=== Prebuilt package contents ==="
-          ls -lah prebuilt/
-          echo ""
-          echo "=== Modules ==="
-          ls -lah prebuilt/modules/ 2>/dev/null || echo "No modules directory"
-          echo ""
-          echo "=== Headers ==="
-          ls -lah prebuilt/headers/ 2>/dev/null || echo "No headers directory"
-
           cd prebuilt
           zip -r9 ../${ARTIFACT_NAME}-prebuilts.zip *
 
@@ -230,3 +229,28 @@ jobs:
           name: build-log-${{ env.ARTIFACT_NAME }}
           path: build.log
           retention-days: 7
+
+      - name: Telegram notification
+        if: always()
+        run: |
+          COMPILER_VER=$(/tmp/clang/bin/clang --version | head -1)
+          if [ "${{ job.status }}" == "success" ]; then
+            B_MIN=$((${{ env.B_TIME }} / 60))
+            B_SEC=$((${{ env.B_TIME }} % 60))
+            CAPTION="build succeeded in ${B_MIN}m, ${B_SEC}s
+md5: ${{ env.Z_MD5 }}
+compiler: ${COMPILER_VER}"
+            for CHAT in "$PRIVATE_CHAT_ID" "$GROUP_CHAT_ID"; do
+              curl -s -F chat_id="$CHAT" \
+                -F document=@${{ env.ARTIFACT_NAME }}.zip \
+                -F caption="$CAPTION" \
+                "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument"
+            done
+          else
+            for CHAT in "$PRIVATE_CHAT_ID" "$GROUP_CHAT_ID"; do
+              curl -s -F chat_id="$CHAT" \
+                -F document=@build.log \
+                -F caption="build failed. check log." \
+                "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument"
+            done
+          fi
