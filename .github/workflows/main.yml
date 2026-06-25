@@ -237,11 +237,12 @@ jobs:
           if [ "${{ job.status }}" == "success" ]; then
             B_MIN=$((${{ env.B_TIME }} / 60))
             B_SEC=$((${{ env.B_TIME }} % 60))
-            CAPTION=$(printf "build succeeded in %sm, %ss\nmd5: %s\ncompiler: %s" "$B_MIN" "$B_SEC" "${{ env.Z_MD5 }}" "$COMPILER_VER")
+            CAPTION=$(printf "build succeeded in %sm, %ss\nmd5: \`%s\`\ncompiler: %s" "$B_MIN" "$B_SEC" "${{ env.Z_MD5 }}" "$COMPILER_VER")
             for CHAT in "$PRIVATE_CHAT_ID" "$GROUP_CHAT_ID"; do
               curl -s -F chat_id="$CHAT" \
                 -F document=@${{ env.ARTIFACT_NAME }}.zip \
                 -F caption="$CAPTION" \
+                -F parse_mode=Markdown \
                 "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument"
             done
           else
