@@ -1,4 +1,4 @@
-# MTK Kernel Build with ReSukiSU Integration
+# MTK Kernel Build
 # Defconfig: blossom_defconfig
 
 name: Build Nadeko Kernel
@@ -12,6 +12,9 @@ env:
   KERNEL_ARCH: "arm64"
   KBUILD_BUILD_USER: "github-actions"
   KBUILD_BUILD_HOST: "ci-server"
+  BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  PRIVATE_CHAT_ID: ${{ secrets.TELEGRAM_PRIVATE_CHAT_ID }}
+  GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
 
 jobs:
   build_and_package:
@@ -53,28 +56,9 @@ jobs:
           /tmp/gcc-aarch64/bin/aarch64-linux-android-gcc --version
           /tmp/gcc-arm/bin/arm-linux-androideabi-gcc --version
 
-      - name: Integrate ReSukiSU
-        run: |
-          chmod u+x clean.sh
-          bash clean.sh
-          curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
-
-      - name: Get ReSukiSU version
-        run: |
-          RSK_VER="0"
-          for d in KernelSU KernelSU/kernel kernel/KernelSU drivers/kernelsu; do
-            if [ -d "$d" ]; then
-              RSK_VER=$(cd "$d" && git rev-list --count HEAD 2>/dev/null || echo "0")
-              if [ "$RSK_VER" != "0" ]; then
-                break
-              fi
-            fi
-          done
-          echo "RSK_VER=$RSK_VER" >> $GITHUB_ENV
-          echo "ReSukiSU version: $RSK_VER"
-
       - name: Build kernel
         run: |
+          START_TIME=$(date +%s)
           export PATH="/tmp/clang/bin:/tmp/gcc-aarch64/bin:/tmp/gcc-arm/bin:${PATH}"
 
           export ARCH=${KERNEL_ARCH}
@@ -85,7 +69,7 @@ jobs:
 
           make O=out ARCH=${ARCH} ${KERNEL_DEFCONFIG}
 
-          echo "Building kernel with ReSukiSU..."
+          echo "Building kernel..."
           make -j$(nproc) \
             O=out \
             ARCH=${ARCH} \
@@ -94,6 +78,8 @@ jobs:
             CROSS_COMPILE=${CROSS_COMPILE} \
             CROSS_COMPILE_ARM32=${CROSS_COMPILE_ARM32} \
             2>&1 | tee build.log
+
+          echo "B_TIME=$(($(date +%s) - START_TIME))" >> $GITHUB_ENV
 
       - name: Set artifact name
         run: |
@@ -126,7 +112,7 @@ jobs:
 
           cat > anykernel.sh << 'EOF'
           properties() { '
-          kernel.string=Nadeko Kernel for blossom by dre698
+          kernel.string=Nadeko Kernel by dre698
           do.devicecheck=1
           device.name1=blossom
           device.name2=dandelion
@@ -150,6 +136,9 @@ jobs:
           EOF
 
           zip -r9 ../${ARTIFACT_NAME}.zip * -x .git README.md *placeholder
+
+          Z_MD5=$(md5sum ../${ARTIFACT_NAME}.zip | cut -d' ' -f1)
+          echo "Z_MD5=$Z_MD5" >> $GITHUB_ENV
 
       - name: Package Prebuilt Artifacts
         run: |
@@ -237,3 +226,28 @@ jobs:
           name: build-log-${{ env.ARTIFACT_NAME }}
           path: build.log
           retention-days: 7
+          
+      - name: Telegram notification
+        if: always()
+        run: |
+          COMPILER_VER=$(/tmp/clang/bin/clang --version | head -1 | sed 's/ (.*//')
+          if [ "${{ job.status }}" == "success" ]; then
+            B_MIN=$((${{ env.B_TIME }} / 60))
+            B_SEC=$((${{ env.B_TIME }} % 60))
+            CAPTION=$(printf "build succeeded in %sm, %ss\nmd5: \`%s\`\ncompiler: %s" "$B_MIN" "$B_SEC" "${{ env.Z_MD5 }}" "$COMPILER_VER")
+            for CHAT in "$PRIVATE_CHAT_ID" "$GROUP_CHAT_ID"; do
+              curl -s -F chat_id="$CHAT" \
+                -F document=@${{ env.ARTIFACT_NAME }}.zip \
+                -F caption="$CAPTION" \
+                -F parse_mode=Markdown \
+                "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument"
+            done
+          else
+            for CHAT in "$PRIVATE_CHAT_ID" "$GROUP_CHAT_ID"; do
+              curl -s -F chat_id="$CHAT" \
+                -F document=@build.log \
+                -F caption="build failed. check log." \
+                "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument"
+            done
+          fi
+          
