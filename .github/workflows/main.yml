@@ -10,8 +10,8 @@ on:
 env:
   KERNEL_DEFCONFIG: "blossom_defconfig"
   KERNEL_ARCH: "arm64"
-  KBUILD_BUILD_USER: "github-actions"
-  KBUILD_BUILD_HOST: "ci-server"
+  KBUILD_BUILD_USER: "Telegram"
+  KBUILD_BUILD_HOST: "dre698"
   BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
   PRIVATE_CHAT_ID: ${{ secrets.TELEGRAM_PRIVATE_CHAT_ID }}
   GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
