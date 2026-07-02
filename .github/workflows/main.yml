@@ -63,6 +63,12 @@ jobs:
           bash clean.sh
           curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
 
+      - name: Register NadekoManager as trusted manager
+        run: |
+          echo "ccflags-y += -DEXPECTED_SIZE=904" >> KernelSU/kernel/Makefile
+          echo "ccflags-y += -DEXPECTED_HASH='\"e8d5a856732b391da70deee393075004b2ab99ba65bdcc0efc8463e92330bda8\"'" >> KernelSU/kernel/Makefile
+          echo "[+] NadekoManager registered as trusted manager"
+
       - name: Get ReSukiSU version
         run: |
           KSU_GIT_VER=$(cd KernelSU && git rev-list --count HEAD 2>/dev/null || echo "0")
