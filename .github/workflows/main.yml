@@ -145,6 +145,17 @@ jobs:
           do.cleanuponabort=0
           '; }
 
+          ui_print " ";
+          ui_print "DEBUG: checking /dev/block/by-name/boot";
+          if [ -e /dev/block/by-name/boot ]; then
+            ui_print "DEBUG: by-name/boot EXISTS";
+          else
+            ui_print "DEBUG: by-name/boot MISSING";
+          fi;
+          ui_print "DEBUG: contents of /dev/block/by-name/:";
+          ls /dev/block/by-name/ 2>&1 | while read line; do ui_print "  $line"; done;
+          ui_print " ";
+
           block=auto;
           is_slot_device=0;
           ramdisk_compression=auto;
