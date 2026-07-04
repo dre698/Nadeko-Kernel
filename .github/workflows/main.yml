@@ -131,7 +131,7 @@ jobs:
 
           # Inject debug dump right before the failing abort line in ak3-core.sh
           sed -i '/abort "Unable to determine \$BLOCK partition/i\
-    { echo "=== SETUP_AK DEBUG ==="; echo "BLOCK=$BLOCK SLOT=$SLOT target=$target parttype=$parttype"; echo "--- by-name ---"; ls -la /dev/block/by-name/ 2>\&1; echo "--- bootdevice/by-name ---"; ls -la /dev/block/bootdevice/by-name/ 2>\&1; } > /sdcard/ak3_debug.txt 2>\&1;' tools/ak3-core.sh
+          { echo "=== SETUP_AK DEBUG ==="; echo "BLOCK=$BLOCK SLOT=$SLOT target=$target parttype=$parttype"; echo "--- by-name ---"; ls -la /dev/block/by-name/ 2>\&1; echo "--- bootdevice/by-name ---"; ls -la /dev/block/bootdevice/by-name/ 2>\&1; } > /sdcard/ak3_debug.txt 2>\&1;' tools/ak3-core.sh
 
           cat > anykernel.sh << 'EOF'
           properties() { '
