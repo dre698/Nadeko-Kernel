@@ -151,18 +151,14 @@ jobs:
 
           . tools/ak3-core.sh;
 
-          ui_print " ";
-          ui_print "DEBUG: checking /dev/block/by-name/boot";
-          if [ -e /dev/block/by-name/boot ]; then
-            ui_print "DEBUG: by-name/boot EXISTS";
-          else
-            ui_print "DEBUG: by-name/boot MISSING";
-          fi;
-          ui_print "DEBUG: listing /dev/block/by-name/:";
-          for f in /dev/block/by-name/*; do
-            ui_print "  $f";
-          done;
-          ui_print " ";
+          {
+            echo "=== DEBUG START ===";
+            echo "OUTFD=$OUTFD";
+            echo "PATH=$PATH";
+            ls -la /dev/block/by-name/ 2>&1;
+            test -e /dev/block/by-name/boot && echo "BOOT EXISTS" || echo "BOOT MISSING";
+            echo "=== DEBUG END ===";
+          } > /sdcard/ak3_debug.txt 2>&1;
 
           dump_boot;
           write_boot;
