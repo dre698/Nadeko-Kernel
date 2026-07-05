@@ -108,7 +108,7 @@ jobs:
 
       - name: Package AnyKernel3
         run: |
-          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git anykernel
+          git clone -b nadeko --depth=1 https://github.com/dre698/AnyKernel3.git anykernel
           cd anykernel
           rm -f zImage *.dtb
 
@@ -129,10 +129,6 @@ jobs:
 
           cp ../out/arch/${KERNEL_ARCH}/boot/dtb*.img . 2>/dev/null || echo "No DTB files"
 
-          # Inject debug dump right before the failing abort line in ak3-core.sh
-          sed -i '/abort "Unable to determine \$BLOCK partition/i\
-          { echo "=== SETUP_AK DEBUG ==="; echo "BLOCK=$BLOCK SLOT=$SLOT target=$target parttype=$parttype"; echo "--- by-name ---"; ls -la /dev/block/by-name/ 2>\&1; echo "--- bootdevice/by-name ---"; ls -la /dev/block/bootdevice/by-name/ 2>\&1; } > /sdcard/ak3_debug.txt 2>\&1;' tools/ak3-core.sh
-
           cat > anykernel.sh << 'EOF'
           properties() { '
           kernel.string=Nadeko Kernel for blossom by dre698
@@ -149,9 +145,9 @@ jobs:
           do.cleanuponabort=0
           '; }
 
-          block=auto;
-          is_slot_device=0;
-          ramdisk_compression=auto;
+          BLOCK=auto;
+          IS_SLOT_DEVICE=0;
+          RAMDISK_COMPRESSION=auto;
 
           . tools/ak3-core.sh;
           dump_boot;
