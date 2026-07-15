@@ -25,6 +25,7 @@
 #include "mount.h"
 
 extern bool susfs_is_current_ksu_domain(void);
+extern struct cred *ksu_cred;
 
 #ifdef CONFIG_KSU_SUSFS_ENABLE_LOG
 bool susfs_is_log_enabled __read_mostly = true;
@@ -1437,10 +1438,26 @@ void susfs_start_sdcard_monitor_fn(void) {
 	}
 }
 
+// Defer extra susfs works to workqueue after do_umount in ksu_handle_setresuid()
+// so that we do not block there and reduce the risk of time side channel as much as possible.
+struct work_struct susfs_extra_works;
+
+static void susfs_run_extra_works(struct work_struct *work) {
+	if (!ksu_cred)
+		return;
+
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	susfs_run_sus_path_loop();
+#endif
+}   
+
 /* susfs_init */
 void susfs_init(void) {
-	SUSFS_LOGI("susfs is initialized! version: " SUSFS_VERSION " \n");
+	SUSFS_LOGI("Initializing susfs_extra_works\n");
+	INIT_WORK(&susfs_extra_works, susfs_run_extra_works);
+	SUSFS_LOGI("susfs is initialized! version: SUSFS_VERSION \n");
 }
+
 
 /* No module exit is needed becuase it should never be a loadable kernel module */
 //void __init susfs_exit(void)
