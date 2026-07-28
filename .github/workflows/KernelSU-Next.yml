@@ -72,7 +72,7 @@ jobs:
           KSU_GIT_VER=$(cd KernelSU-Next && git rev-list --count HEAD 2>/dev/null || echo "0")
           KSUN_VER=$((30000 + KSU_GIT_VER))
           echo "KSUN_VER=$KSUN_VER" >> $GITHUB_ENV
-          echo "KernelSU-Next version: $KSUN_GIT_VER"
+          echo "KernelSU-Next version: $KSUN_VER"
 
       - name: Build kernel
         run: |
