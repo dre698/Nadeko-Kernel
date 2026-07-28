@@ -65,13 +65,14 @@ jobs:
         run: |
           chmod u+x clean.sh
           bash clean.sh
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
 
       - name: Get KernelSU-Next version
         run: |
           KSU_GIT_VER=$(cd KernelSU-Next && git rev-list --count HEAD 2>/dev/null || echo "0")
-          echo "KSUN_VER=$KSU_GIT_VER" >> $GITHUB_ENV
-          echo "KernelSU-Next version: $KSU_GIT_VER"
+          KSUN_VER=$((30000 + KSU_GIT_VER))
+          echo "KSUN_VER=$KSUN_VER" >> $GITHUB_ENV
+          echo "KernelSU-Next version: $KSUN_GIT_VER"
 
       - name: Build kernel
         run: |
