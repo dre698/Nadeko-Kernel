@@ -1,7 +1,7 @@
 # MTK Kernel Build with NadekoSU Integration
 # Defconfig: blossom_defconfig
 
-name: Build Nadeko Kernel With NadekoSU
+name: Build Nadeko Kernel Overclocked With NadekoSU
 
 on:
   workflow_dispatch:
@@ -98,7 +98,7 @@ jobs:
 
       - name: Set artifact name
         run: |
-          ARTIFACT_NAME="Nadeko-nsu${NSU_VER}-$(date +%y%m%d)-$(date +%H%M)-${GITHUB_SHA:0:9}"
+          ARTIFACT_NAME="Nadeko-oc-nsu${NSU_VER}-$(date +%y%m%d)-$(date +%H%M)-${GITHUB_SHA:0:9}"
           echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
           echo "Artifact name: $ARTIFACT_NAME"
 
@@ -127,7 +127,7 @@ jobs:
 
           cat > anykernel.sh << 'EOF'
           properties() { '
-          kernel.string=Nadeko Kernel for blossom by dre698
+          kernel.string=Nadeko Kernel Overclock Version for blossom by dre698
           do.devicecheck=1
           device.name1=blossom
           device.name2=dandelion
