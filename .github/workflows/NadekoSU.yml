@@ -59,10 +59,8 @@ jobs:
       - name: Integrate NadekoSU
         run: |
           chmod u+x clean.sh
-          chmod u+x syscall_hook.sh
           bash clean.sh
           curl -LSs "https://raw.githubusercontent.com/dre698/NadekoSU/main/kernel/setup.sh" | bash
-          bash syscall_hook.sh
 
       - name: Get NadekoSU version
         run: |
