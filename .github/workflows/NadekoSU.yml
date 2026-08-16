@@ -126,7 +126,7 @@ jobs:
 
           cat > anykernel.sh << 'EOF'
           properties() { '
-          kernel.string=Nadeko Kernel for blossom by dre698
+          kernel.string=
           do.devicecheck=1
           device.name1=blossom
           device.name2=dandelion
