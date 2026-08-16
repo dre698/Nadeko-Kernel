@@ -127,7 +127,7 @@ jobs:
 
           cat > anykernel.sh << 'EOF'
           properties() { '
-          kernel.string=Nadeko Kernel Overclock Version for blossom by dre698
+          kernel.string=Overclocked Version
           do.devicecheck=1
           device.name1=blossom
           device.name2=dandelion
