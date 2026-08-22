@@ -14,7 +14,6 @@ env:
   KBUILD_BUILD_USER: "Telegram"
   KBUILD_BUILD_HOST: "dre698"
   BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-  PRIVATE_CHAT_ID: ${{ secrets.TELEGRAM_PRIVATE_CHAT_ID }}
   GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
 
 jobs:
@@ -132,7 +131,7 @@ jobs:
 
           cat > anykernel.sh << 'EOF'
           properties() { '
-          kernel.string=Nadeko Kernel (KernelSU-Next) for blossom by dre698
+          kernel.string=
           do.devicecheck=1
           device.name1=blossom
           device.name2=dandelion
@@ -183,7 +182,7 @@ jobs:
             B_MIN=$((${{ env.B_TIME }} / 60))
             B_SEC=$((${{ env.B_TIME }} % 60))
             CAPTION=$(printf "build succeeded in %sm, %ss\nmd5: \`%s\`\ncompiler: %s" "$B_MIN" "$B_SEC" "${{ env.Z_MD5 }}" "$COMPILER_VER")
-            for CHAT in "$PRIVATE_CHAT_ID" "$GROUP_CHAT_ID"; do
+            for CHAT in "$GROUP_CHAT_ID"; do
               curl -s -F chat_id="$CHAT" \
                 -F document=@${{ env.ARTIFACT_NAME }}.zip \
                 -F caption="$CAPTION" \
@@ -191,7 +190,7 @@ jobs:
                 "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument"
             done
           else
-            for CHAT in "$PRIVATE_CHAT_ID" "$GROUP_CHAT_ID"; do
+            for CHAT in "$GROUP_CHAT_ID"; do
               curl -s -F chat_id="$CHAT" \
                 -F document=@build.log \
                 -F caption="build failed. check log." \
