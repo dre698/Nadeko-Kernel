@@ -57,6 +57,8 @@
  */
  // thread_info->flags is unsigned long :D
 #define TIF_PROC_UMOUNTED 33
+#define TIF_PROC_NO_SU 40
+#define TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT 41
 
 #define AS_FLAGS_SUS_PATH 33
 #define AS_FLAGS_SUS_MOUNT 34
@@ -125,6 +127,27 @@ static inline bool susfs_is_current_proc_umounted_app(void) {
 #else
 			current_uid().val >= 10000);
 #endif
+}
+
+/* "no_su" per-task flag: mirrors KernelSU's own manual-hook TIF_PROC_NON_PRIVILEGE
+ * flag, exposed under the susfs_* naming so drivers/kernelsu can use it when
+ * CONFIG_KSU_SUSFS is enabled (see kernel/feature/sucompat.h). */
+static inline bool susfs_is_current_proc_no_su(void) {
+	return test_ti_thread_flag(&current->thread_info, TIF_PROC_NO_SU);
+}
+
+static inline void susfs_set_current_proc_no_su(void) {
+	set_ti_thread_flag(&current->thread_info, TIF_PROC_NO_SU);
+}
+
+static inline void susfs_clear_current_proc_no_su(void) {
+	clear_ti_thread_flag(&current->thread_info, TIF_PROC_NO_SU);
+}
+
+/* Marks that this task's mount namespace should be unmounted on its next
+ * zygote-forked child, distinct from the immediate TIF_PROC_UMOUNTED flag. */
+static inline void susfs_set_current_proc_umounted_for_zygote_next(void) {
+	set_ti_thread_flag(&current->thread_info, TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT);
 }
 
 #define SUSFS_IS_INODE_SUS_MAP(inode) \
