@@ -28,7 +28,10 @@
 extern void susfs_sus_ino_for_generic_fillattr(unsigned long ino, struct kstat *stat);
 #endif
 
-#ifdef CONFIG_KSU
+/* Disabled: same CONFIG_KSU_SUSFS=y calling-convention mismatch as
+ * ksu_handle_faccessat in fs/open.c (struct filename ** expected here,
+ * raw const char __user ** passed by this call site). */
+#ifdef CONFIG_KSU_MANUAL_HOOK
 __attribute__((hot)) 
 extern int ksu_handle_stat(int *dfd, const char __user **filename_user,
 				int *flags);
@@ -393,7 +396,7 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
-#ifdef CONFIG_KSU
+#ifdef CONFIG_KSU_MANUAL_HOOK
 	ksu_handle_stat(&dfd, &filename, &flag);
 #endif
 
@@ -553,7 +556,7 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
-#ifdef CONFIG_KSU
+#ifdef CONFIG_KSU_MANUAL_HOOK
 	ksu_handle_stat(&dfd, &filename, &flag); /* 32-bit su support */
 #endif
 
