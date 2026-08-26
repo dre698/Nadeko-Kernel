@@ -356,7 +356,12 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
  * We do this by temporarily clearing all FS-related capabilities and
  * switching the fsuid/fsgid around to the real ones.
  */
-#ifdef CONFIG_KSU
+/* Disabled: with CONFIG_KSU_SUSFS=y the driver compiles ksu_handle_faccessat
+ * expecting struct filename **, but this call site passes a raw
+ * const char __user ** — mismatch crashes at early boot (kernel_init_freeable
+ * calling do_faccessat("/init")). Needs the caller-side convention fixed
+ * upstream before this can be re-enabled under CONFIG_KSU_SUSFS=y. */
+#ifdef CONFIG_KSU_MANUAL_HOOK
 extern __attribute__((hot)) int ksu_handle_faccessat(int *dfd,
 		const char __user **filename_user, int *mode, int *flags);
 #endif
@@ -371,7 +376,7 @@ long do_faccessat(int dfd, const char __user *filename, int mode)
 	int res;
 	unsigned int lookup_flags = LOOKUP_FOLLOW;
 
-#ifdef CONFIG_KSU
+#ifdef CONFIG_KSU_MANUAL_HOOK
 	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
 #endif
 
