@@ -55,6 +55,13 @@ jobs:
           /tmp/gcc-aarch64/bin/aarch64-linux-android-gcc --version
           /tmp/gcc-arm/bin/arm-linux-androideabi-gcc --version
 
+      - name: Clean stale KernelSU placeholder
+        run: |
+          echo "Removing any leftover/broken KernelSU directory before NadekoSU setup..."
+          rm -rf KernelSU
+          rm -f drivers/kernelsu
+          echo "Done."
+
       - name: Integrate NadekoSU
         run: |
           curl -LSs "https://raw.githubusercontent.com/dre698/NadekoSU/main/kernel/setup.sh" | bash
